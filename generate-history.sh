@@ -16,7 +16,7 @@ USER_NAME="${USER_EMAIL%%@*}"
 CURRENT_DATE=$(date +"%Y-%m-%d-%H-%M")
 
 # Construire le nom du fichier de sortie
-OUTPUT_FILE="gitHistory-${REPO_PATH##*/}-$USER_NAME.[$CURRENT_DATE].csv"
+OUTPUT_FILE="git-history.[${REPO_PATH##*/}].[$USER_NAME].[$CURRENT_DATE].csv"
 
 # Se déplacer dans le repo
 cd "$REPO_PATH" || { echo "Erreur: Impossible d'accéder au repository"; exit 1; }

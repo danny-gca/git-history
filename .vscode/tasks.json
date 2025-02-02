@@ -11,7 +11,7 @@
       },
       "type": "shell",
       "linux": {
-        "command": "./githistory.sh ${input:userMail} ${input:repoPath}"
+        "command": "./generate-history.sh ${input:userMail} ${input:repoPath}"
       }
     },
   ],
@@ -24,7 +24,7 @@
     },
     {
       "id": "repoPath",
-      "description": "Enter your github repository path",
+      "description": "Enter your repository path",
       "default": "./",
       "type": "promptString"
     },
