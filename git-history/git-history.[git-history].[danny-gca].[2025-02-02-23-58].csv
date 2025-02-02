@@ -1,0 +1,12 @@
+commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time
+9042cbb50c04c6b588534a635a6aa69be67cd79b;"main";"fix: deleted and added lines";1;11;5;2025-02-02;23:56
+874b48de612eb26a1731cfc859ddf843e248565e;"main";"chore: remove useless";1;0;36;2025-02-02;23:55
+77ce100ef21fa7f8313c4023fc6c0ba925a7a6bc;"main";"chore: test";1;36;0;2025-02-02;23:52
+6042688d02d1b400e1cf3025b61f68f1696d8e5e;"main";"feat: now generate inside a specific folder";1;4;1;2025-02-02;23:22
+8b9ace2d7175426bfc2dbfc0f22c0ee0129fca14;"main";"chore: comments";1;16;20;2025-02-02;23:19
+470681df26714c57c4a99a086f054001c58dcf1b;"main";"chore: renaming";1;6;8;2025-02-02;23:13
+d0cfe01cd75e305be7f1ad8a431b873025b97b16;"main";"chore: add readme";1;35;0;2025-02-02;23:13
+1398254da9be00c73ee2f74cf39ce711a5c6e66e;"main";"fix: last commit missing + check on chmod";1;18;2;2025-02-02;23:13
+254ec4fb223402dd51fe3dd4d1338595cb5093fa;"main";"feat: ajout du nombre de fichier modifier et les lignes ajoutées ou supprimées";1;12;2;2025-02-02;22:33
+238a96fe222fef4439b12496b90b30f22a696716;"main";"chore: changing names";1;3;3;2025-02-02;22:18
+4d428030556cd7788828673cbacaae706ea8955f;"main";"init project";1;72;0;2025-02-02;22:12
