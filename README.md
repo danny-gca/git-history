@@ -33,3 +33,7 @@ chmod +x generate-history.sh
 - Enter your email (or use the default one)
 - Enter the path of the project (or use the default one)
 - It will generate a file at the root of your project
+
+## Sample
+- You could find a sample of a CSV generated here : 
+[git-history.[git-history].[danny-gca].[2025-02-02-23-58].csv](git-history/git-history.[git-history].[danny-gca].[2025-02-02-23-58].csv)
