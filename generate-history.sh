@@ -22,14 +22,24 @@ OUTPUT_FILE="git-history.[${REPO_PATH##*/}].[$USER_NAME].[$CURRENT_DATE].csv"
 cd "$REPO_PATH" || { echo "Erreur: Impossible d'accéder au repository"; exit 1; }
 
 # Générer le fichier CSV avec les commits de l'utilisateur
-echo "commit_id;branche;commit_title;date;heure" > "$OUTPUT_FILE"
+echo "commit_id;branche;commit_title;modified_files;added_lines;deleted_lines;date;heure" > "$OUTPUT_FILE"
 
 # Récupérer les commits et ajouter la branche
 declare -A SEEN_COMMITS # Tableau associatif pour marquer les commits déjà ajoutés
 git log --all --author="$USER_EMAIL" --pretty=format:'%H,"%s",%ad' --date=format:'%Y-%m-%d,%H:%M' | while IFS=, read -r commit_id commit_title commit_date commit_time; do
     if [[ -z "${SEEN_COMMITS[$commit_id]}" ]]; then
+        # Récupérer la branche qui contient ce commit
         branch=$(git branch --all --contains "$commit_id" | head -n 1 | sed 's/*//g' | awk '{$1=$1};1')
-        echo "$commit_id;\"$branch\";$commit_title;$commit_date;$commit_time" >> "$OUTPUT_FILE"
+
+        # Récupérer le nombre de fichiers modifiés
+        modified_files=$(git show --stat --oneline "$commit_id" | grep -o '|' | wc -l)
+
+        # Récupérer le nombre de lignes ajoutées et supprimées
+        read added_lines deleted_lines <<< $(git show --numstat "$commit_id" | awk '{added+=$1; deleted+=$2} END {print added, deleted}')
+
+        # Ajouter la ligne au fichier CSV
+        echo "$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time" >> "$OUTPUT_FILE"
+        
         SEEN_COMMITS["$commit_id"]=1  # Marquer le commit comme déjà ajouté
     fi
 done
