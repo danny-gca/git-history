@@ -17,9 +17,12 @@ REPO_PATH=$2
 
 CURRENT_DATE=$(date +"%Y-%m-%d-%H-%M")
 USER_NAME="${USER_EMAIL%%@*}"
-OUTPUT_FILE="git-history.[${REPO_PATH##*/}].[$USER_NAME].[$CURRENT_DATE].csv"
+OUTPUT_FILE="git-history/git-history.[${REPO_PATH##*/}].[$USER_NAME].[$CURRENT_DATE].csv"
 
 cd "$REPO_PATH" || { echo "Erreur: Impossible d'accéder au repository"; exit 1; }
+
+# Create the directory for the output file
+mkdir -p git-history
 
 # Creation of the CSV file
 echo "commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time" > "$OUTPUT_FILE"
