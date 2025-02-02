@@ -44,11 +44,17 @@ for line in $git_log_output; do
         # Get the branch name
         branch=$(git branch --all --contains "$commit_id" | head -n 1 | sed 's/*//g' | awk '{$1=$1};1')
 
-        # Get the number of modified files
-        modified_files=$(git show --stat --oneline "$commit_id" | grep -o '|' | wc -l)
-
-        # Get the number of added and deleted lines
-        read added_lines deleted_lines <<< $(git show --numstat "$commit_id" | awk '{added+=$1; deleted+=$2} END {print added, deleted}')
+        # use this command to find modified, added and deleted lines
+        git_show_stat=$(git show --stat --oneline "$commit_id")
+        modified_files=$(echo "$git_show_stat" | grep -oP '^\s+\d+\s+file' | wc -l)
+        added_lines=$(echo "$git_show_stat" | grep -oP '\d+(?= insertions?\(\+\))' | awk '{s+=$1} END {print s}')
+        deleted_lines=$(echo "$git_show_stat" | grep -oP '\d+(?= deletions?\(-\))' | awk '{s+=$1} END {print s}')
+        if [[ -z "$added_lines" ]]; then
+            added_lines=0
+        fi
+        if [[ -z "$deleted_lines" ]]; then
+            deleted_lines=0
+        fi
 
         # Write the commit information to the CSV file
         echo "$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time" >> "$OUTPUT_FILE"
