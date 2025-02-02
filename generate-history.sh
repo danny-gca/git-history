@@ -37,8 +37,8 @@ IFS=$'\n'
 for line in $git_log_output; do
     commit_id=$(echo $line | cut -d',' -f1)
     commit_title=$(echo $line | cut -d',' -f2)
-    commit_date=$(echo $line | cut -d',' -f3 | cut -d' ' -f1)
-    commit_time=$(echo $line | cut -d',' -f3 | cut -d' ' -f2)
+    commit_date=$(echo $line | cut -d',' -f3)
+    commit_time=$(echo $line | cut -d',' -f4)
 
     if [[ -z "${SEEN_COMMITS[$commit_id]}" ]]; then
         # Get the branch name
