@@ -1,11 +1,9 @@
 {
-  // See https://go.microsoft.com/fwlink/?LinkId=733558
-  // for the documentation about the tasks.json format
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "GitHistory - Generate",
-      "detail": "Permet de générer un fichier de l'historique des commits pour un utilisateur",
+      "label": "git-history:generate",
+      "detail": "Generate a CSV file from the commits history of the user in a repository",
       "presentation": {
         "focus": true
       },
@@ -13,20 +11,20 @@
       "linux": {
         "command": "./generate-history.sh ${input:userMail} ${input:repoPath}"
       }
-    },
+    }
   ],
   "inputs": [
     {
       "id": "userMail",
       "description": "Enter your email",
-      "default": "your@email.you",
+      "default": "your@mail.org",
       "type": "promptString"
     },
     {
       "id": "repoPath",
       "description": "Enter your repository path",
-      "default": "./",
+      "default": "~/path/to/your/repo",
       "type": "promptString"
-    },
+    }
   ]
 }
