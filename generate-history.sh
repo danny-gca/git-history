@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Vérification des arguments
+# Checking arguments
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <user_email> <repository_path>"
     exit 1
 fi
 
-# Vérifie si le script est exécutable
+# Checking executable permission
 if [ ! -x "$0" ]; then
     echo "Error: You need to execute : chmod +x $0"
     exit 1
@@ -15,27 +15,21 @@ fi
 USER_EMAIL=$1
 REPO_PATH=$2
 
-# Extraire le début de l'email (avant le @)
-USER_NAME="${USER_EMAIL%%@*}"
-
-# Générer la date et l'heure actuelle au format [YYYY-MM-DD-HH-MM]
 CURRENT_DATE=$(date +"%Y-%m-%d-%H-%M")
-
-# Construire le nom du fichier de sortie
+USER_NAME="${USER_EMAIL%%@*}"
 OUTPUT_FILE="git-history.[${REPO_PATH##*/}].[$USER_NAME].[$CURRENT_DATE].csv"
 
-# Se déplacer dans le repo
 cd "$REPO_PATH" || { echo "Erreur: Impossible d'accéder au repository"; exit 1; }
 
-# Générer le fichier CSV avec les commits de l'utilisateur
+# Creation of the CSV file
 echo "commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time" > "$OUTPUT_FILE"
 
-# Récupérer les commits et ajouter la branche
-declare -A SEEN_COMMITS # Tableau associatif pour marquer les commits déjà ajoutés
+declare -A SEEN_COMMITS # Array to store seen commits
 
+# Get the history of the repository for the user
 git_log_output=$(git log --all --author="$USER_EMAIL" --pretty=format:'%H,"%s",%ad' --date=format:'%Y-%m-%d,%H:%M')
 
-# Traiter chaque ligne de git_log_output
+# Loop through the history
 IFS=$'\n'
 for line in $git_log_output; do
     commit_id=$(echo $line | cut -d',' -f1)
@@ -44,23 +38,25 @@ for line in $git_log_output; do
     commit_time=$(echo $line | cut -d',' -f3 | cut -d' ' -f2)
 
     if [[ -z "${SEEN_COMMITS[$commit_id]}" ]]; then
-        # Récupérer la branche qui contient ce commit
+        # Get the branch name
         branch=$(git branch --all --contains "$commit_id" | head -n 1 | sed 's/*//g' | awk '{$1=$1};1')
 
-        # Récupérer le nombre de fichiers modifiés
+        # Get the number of modified files
         modified_files=$(git show --stat --oneline "$commit_id" | grep -o '|' | wc -l)
 
-        # Récupérer le nombre de lignes ajoutées et supprimées
+        # Get the number of added and deleted lines
         read added_lines deleted_lines <<< $(git show --numstat "$commit_id" | awk '{added+=$1; deleted+=$2} END {print added, deleted}')
 
-        # Ajouter la ligne au fichier CSV
+        # Write the commit information to the CSV file
         echo "$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time" >> "$OUTPUT_FILE"
         
-        SEEN_COMMITS["$commit_id"]=1  # Marquer le commit comme déjà ajouté
+        # Mark the commit as seen
+        SEEN_COMMITS["$commit_id"]=1
     fi
 done
 
-# Obtenir le chemin absolu du fichier généré
+# Get the absolute path of the output file
 OUTPUT_PATH="$(realpath "$OUTPUT_FILE")"
-echo "Historique enregistré dans :"
+
+echo "Find your git-history generated here :"
 echo "$OUTPUT_PATH"
