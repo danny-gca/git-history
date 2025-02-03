@@ -44,4 +44,4 @@ chmod +x generate-history.sh
 
 ## Sample
 - You could find a sample of a CSV generated here : 
-[git-history.[git-history].[your].[2025-02-03-19-49].csv](git-history/git-history.[git-history].[your].[2025-02-03-19-49].csv)
+[git-history.(git-history).(your).(2025-02-03-19-49).csv](git-history/git-history.(git-history).(your).(2025-02-03-19-49).csv)

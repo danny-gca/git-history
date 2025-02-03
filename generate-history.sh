@@ -20,7 +20,7 @@ REPO_PATH=$2
 # Variables
 CURRENT_DATE=$(date +"%Y-%m-%d-%H-%M")
 USER_NAME="${USER_EMAIL%%@*}"
-OUTPUT_FILE="git-history/git-history.[${REPO_PATH##*/}].[$USER_NAME].[$CURRENT_DATE].csv"
+OUTPUT_FILE="git-history/git-history.(${REPO_PATH##*/}).($USER_NAME).($CURRENT_DATE).csv"
 
 # Check if the repository exists and move to it
 cd "$REPO_PATH" || { echo "Erreur: Impossible d'accéder au repository"; exit 1; }
