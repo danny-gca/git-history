@@ -1,47 +1,86 @@
-# git-history
+# 🕵️‍♂️ git-history
 
-## Description
-This project allows you to get a detailed history by commit of your repository.
-You must enter your email and the path to a repository.
-The program will browse all the commits that concern the requested user and generate a file in CSV format.
-The path to the file is displayed at the end of the program.
+## 📖 Description
 
-It allows you to obtain, on each commit, the following data:
-- The commit id
-- The branch name
-- The commit title
-- The number of modified files
-- The number of added lines
-- The number of deleted lines
-- The date of the commit
-- The time of the commit
+`git-history` allows you to generate a detailed commit history for any Git repository.  
+Simply provide your email and the repository path, and the script will extract all commits associated with the given user.  
 
-## Initialisation
-- Clone this repository where you want
-- Make sure to have the full right on the file "generate-history.sh"
-```
-chmod +x generate-history.sh
-```
+A CSV file is generated at the end, containing key details for each commit:  
 
-## Customization
-- Copy / paste the "config.sample.sh" file and set it up as you want
-- You can change your default inputs in ".vscode/tasks.json"
-  - "default": "your@mail.org"
-  - "default": "~/path/to/your/repo"
+- ✅ Commit ID  
+- 🌿 Branch name  
+- 📝 Commit title  
+- 🛠️ Number of modified files  
+- ➕ Number of added lines  
+- ➖ Number of deleted lines  
+- 📅 Commit date  
+- ⏰ Commit time  
+- ⏳ Whether the commit was made during **overtime**  
+- 📆 Whether the commit was made on a **Saturday**  
+- 📆 Whether the commit was made on a **Sunday**  
 
-## Usage
+---
 
-### With a terminal
-```
+## 🚀 Installation
+
+1. **Clone this repository**  
+
+   ```bash
+   git clone https://github.com/yourusername/git-history.git
+   ```
+
+2. **Ensure the script has execution permissions**  
+
+   ```bash
+   chmod +x generate-history.sh
+   ```
+
+---
+
+## ⚙️ Customization
+
+- **Copy and rename the configuration file:**  
+
+  ```bash
+  cp config.sample.sh config.sh
+  ```
+
+  Then, modify `config.sh` as needed.  
+
+- **To set default values in VS Code**, edit `.vscode/tasks.json` and update:  
+
+  ```json
+  {
+    "default": "your@mail.org",
+    "default": "~/path/to/your/repo"
+  }
+  ```
+
+---
+
+## ✏️ Usage
+
+### 🖥️ Running via Terminal
+
+```bash
 ./generate-history.sh your@mail.org ~/your/project/path
 ```
 
-### With VsCode
-- Launch the VsCode task "git-history:generate"
-- Enter your email (or use the default one)
-- Enter the path of the project (or use the default one)
-- It will generate a file at the root of your project
+### 💻 Running via VS Code
 
-## Sample
-- You could find a sample of a CSV generated here : 
-[git-history.(git-history).(your).(2025-02-03-19-49).csv](git-history/git-history.(git-history).(your).(2025-02-03-19-49).csv)
+1. Open **VS Code**  
+2. Run the task **"git-history:generate"**  
+3. Enter your email (or use the default one)  
+4. Enter the project path (or use the default one)  
+5. The generated CSV file will appear in a folder `git-history` at the root of your project  
+
+---
+
+## 📂 Example Output
+
+Find your git-history generated here:  
+📄 [git-history.(git-history).(your).(2025-02-03-19-49).csv](git-history/git-history.(git-history).(your).(2025-02-03-19-49).csv)
+
+---
+
+🔥 **Enjoy tracking your commits!** 🚀
