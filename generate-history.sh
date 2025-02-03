@@ -79,10 +79,9 @@ for line in $git_log_output; do
         fi
 
         # Check if the commit was done outside of working hours
-        commit_hour=$(date -d "$commit_time" +%H.%M)
         # check if is before 2024
         if [[ "$commit_date" < "2024-01-01" ]]; then
-            if [[ "$commit_hour" < "$BEFORE_2024_WORKING_HOURS_MORNING_START" ]] || [[ "$commit_hour" > "$BEFORE_2024_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_hour" < "$BEFORE_2024_WORKING_HOURS_AFTERNOON_START" ]] || [[ "$commit_hour" > "$BEFORE_2024_WORKING_HOURS_AFTERNOON_END" ]]; then
+            if [[ "$commit_time" < "$BEFORE_2024_WORKING_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$BEFORE_2024_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$BEFORE_2024_WORKING_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$BEFORE_2024_WORKING_HOURS_AFTERNOON_END" ]]; then
                 is_overtime=1
             fi
         else
@@ -92,7 +91,7 @@ for line in $git_log_output; do
                 # if the commit is after morning end AND
                 # if the commit is before afternoon start OR
                 # if the commit is after afternoon end
-                if [[ "$commit_hour" < "$CURRENT_HOME_HOURS_MORNING_START" ]] || [[ "$commit_hour" > "$CURRENT_HOME_HOURS_MORNING_END" ]] && [[ "$commit_hour" < "$CURRENT_HOME_HOURS_AFTERNOON_START" ]] || [[ "$commit_hour" > "$CURRENT_HOME_HOURS_AFTERNOON_END" ]]; then
+                if [[ "$commit_time" < "$CURRENT_HOME_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$CURRENT_HOME_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_HOME_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$CURRENT_HOME_HOURS_AFTERNOON_END" ]]; then
                     is_overtime=1
                 fi
             fi
@@ -102,7 +101,7 @@ for line in $git_log_output; do
                 # if the commit is after morning end AND
                 # if the commit is before afternoon start OR
                 # if the commit is after afternoon end
-                if [[ "$commit_hour" < "$CURRENT_OFFICE_HOURS_MORNING_START" ]] || [[ "$commit_hour" > "$CURRENT_OFFICE_HOURS_MORNING_END" ]] && [[ "$commit_hour" < "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]] || [[ "$commit_hour" > "$CURRENT_OFFICE_HOURS_AFTERNOON_END" ]]; then
+                if [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_AFTERNOON_END" ]]; then
                     is_overtime=1
                 fi
             fi
