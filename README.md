@@ -30,6 +30,13 @@ chmod +x generate-history.sh
   - "default": "~/path/to/your/repo"
 
 ## Usage
+
+### With a terminal
+```
+./generate-history.sh your@mail.org ~/your/project/path
+```
+
+### With VsCode
 - Launch the VsCode task "git-history:generate"
 - Enter your email (or use the default one)
 - Enter the path of the project (or use the default one)
@@ -37,4 +44,4 @@ chmod +x generate-history.sh
 
 ## Sample
 - You could find a sample of a CSV generated here : 
-[git-history.[git-history].[danny-gca].[2025-02-02-23-58].csv](git-history/git-history.[git-history].[danny-gca].[2025-02-02-23-58].csv)
+[git-history.[git-history].[your].[2025-02-03-19-49].csv](git-history/git-history.[git-history].[your].[2025-02-03-19-49].csv)
