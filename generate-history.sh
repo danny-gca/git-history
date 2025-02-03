@@ -44,13 +44,13 @@ git_log_output=$(git log --all --author="$USER_EMAIL" --pretty=format:'%H|"%s"|%
 IFS=$'\n'
 for line in $git_log_output; do
     commit_id=$(echo $line | awk -F'|' '{print $1}')
-    commit_title=$(echo $line | awk -F'|' '{print $2}')
+    commit_title=$(echo $line | awk -F'|' '{print $2}' | sed 's/;/,/g')
     commit_date=$(echo $line | awk -F'|' '{print $3}')
     commit_time=$(echo $line | awk -F'|' '{print $4}')
 
     if [[ -z "${SEEN_COMMITS[$commit_id]}" ]]; then
         # Get the branch name
-        branch=$(git branch --all --contains "$commit_id" | head -n 1 | sed 's/*//g' | awk '{$1=$1};1')
+        branch=$(git branch --all --contains "$commit_id" | head -n 1 | sed 's/*//g' | awk '{$1=$1};1' | sed 's/;/,/g')
 
         # use this command to find modified, added and deleted lines
         git_show_stat=$(git show --stat --oneline "$commit_id")
