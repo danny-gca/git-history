@@ -54,7 +54,7 @@ for line in $git_log_output; do
 
         # use this command to find modified, added and deleted lines
         git_show_stat=$(git show --stat --oneline "$commit_id")
-        modified_files=$(echo "$git_show_stat" | grep -oP '^\s+\d+\s+file' | wc -l)
+        modified_files=$(echo "$git_show_stat" | grep -oP '^\s*\d+\s+file' | awk '{s+=$1} END {print s}')        
         added_lines=$(echo "$git_show_stat" | grep -oP '\d+(?= insertions?\(\+\))' | awk '{s+=$1} END {print s}')
         deleted_lines=$(echo "$git_show_stat" | grep -oP '\d+(?= deletions?\(-\))' | awk '{s+=$1} END {print s}')
         if [[ -z "$added_lines" ]]; then
