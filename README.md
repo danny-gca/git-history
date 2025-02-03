@@ -24,6 +24,7 @@ chmod +x generate-history.sh
 ```
 
 ## Customization
+- Copy / paste the "config.sample.sh" file and set it up as you want
 - You can change your default inputs in ".vscode/tasks.json"
   - "default": "your@mail.org"
   - "default": "~/path/to/your/repo"
