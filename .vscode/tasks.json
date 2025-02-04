@@ -16,7 +16,7 @@
   "inputs": [
     {
       "id": "userMail",
-      "description": "Enter your email",
+      "description": "Options: --all <email> or <email>",
       "default": "your@mail.org",
       "type": "promptString"
     },

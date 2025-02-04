@@ -7,6 +7,7 @@ Simply provide your email and the repository path, and the script will extract a
 
 A CSV file is generated at the end, containing key details for each commit:  
 
+- ✏️ Project name
 - ✅ Commit ID  
 - 🌿 Branch name  
 - 📝 Commit title  
@@ -63,23 +64,29 @@ A CSV file is generated at the end, containing key details for each commit:
 ### 🖥️ Running via Terminal
 
 ```bash
+
+# For one project
 ./generate-history.sh your@mail.org ~/your/project/path
+
+# For multiple projects
+./generate-history.sh --all your@mail.org ~/your/folder/path
+
 ```
 
 ### 💻 Running via VS Code
 
 1. Open **VS Code**  
 2. Run the task **"git-history:generate"**  
-3. Enter your email (or use the default one)  
-4. Enter the project path (or use the default one)  
+3. Enter your email and add the option --all if you want to generate for all projects
+4. Enter the project path  
 5. The generated CSV file will appear in a folder `git-history` at the root of your project  
 
 ---
 
 ## 📂 Example Output
 
-Find your git-history generated here:  
-📄 [git-history.(git-history).(your).(2025-02-03-19-49).csv](git-history/git-history.(git-history).(your).(2025-02-03-19-49).csv)
+📄 Find your git-history generated here:  
+[git-history/git-history.your.2025-02-04-15-57.csv](git-history/git-history.your.2025-02-04-15-57.csv)
 
 ---
 
