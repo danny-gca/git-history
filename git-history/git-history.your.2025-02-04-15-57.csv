@@ -7,11 +7,12 @@ repository
 Before 2024 working hours;morning_start;morning_end;afternoon_start;afternoon_end
 ;09:00;12:00;14:00;18:00
 
+Current working hours at office;morning_start;morning_end;afternoon_start;afternoon_end
+1 2 3;08:00;11:30;13:00;17:00
+
 Current working hours at home;morning_start;morning_end;afternoon_start;afternoon_end
 4 5;09:30;13:00;14:00;16:30
 
-Current working hours at office;morning_start;morning_end;afternoon_start;afternoon_end
-1 2 3;08:00;11:30;13:00;17:00
 
 project_name;commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time;is_overtime;is_saturday;is_sunday
 git-history;b53a44569e8c360bad527c3659506adfe686bd41;"main";"chore: update sample";1;14;6;2025-02-04;00:16;1;0;0
