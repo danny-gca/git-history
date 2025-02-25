@@ -135,7 +135,7 @@ generateHistory() {
             fi
 
             # Write the commit information to the CSV file
-            echo "$project_name;$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time;$is_overtime;$is_saturday;$is_sunday" >>"$PARAM_OUTPUT_FILE"
+            echo "$project_name;$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time;$is_overtime;$is_saturday;$is_sunday" >> "$PARAM_OUTPUT_FILE"
 
             # Mark the commit as seen
             SEEN_COMMITS["$commit_id"]=1
@@ -144,10 +144,23 @@ generateHistory() {
 }
 
 # Creation of the CSV file
-echo "user;$USER_EMAIL" >"$OUTPUT_FILE"
-echo "repository;$REPO_PATH" >>"$OUTPUT_FILE"
-echo "" >>"$OUTPUT_FILE"
-echo "project_name;commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time;is_overtime;is_saturday;is_sunday" >>"$OUTPUT_FILE"
+echo "user;repository" > "$OUTPUT_FILE"
+echo "$USER_EMAIL;$REPO_PATH" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+echo "Before 2024 working hours;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
+echo ";$BEFORE_2024_WORKING_HOURS_MORNING_START;$BEFORE_2024_WORKING_HOURS_MORNING_END;$BEFORE_2024_WORKING_HOURS_AFTERNOON_START;$BEFORE_2024_WORKING_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+echo "Current working hours at office;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
+echo "${CURRENT_OFFICE_DAYS[@]};$CURRENT_OFFICE_HOURS_MORNING_START;$CURRENT_OFFICE_HOURS_MORNING_END;$CURRENT_OFFICE_HOURS_AFTERNOON_START;$CURRENT_OFFICE_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+echo "Current working hours at home;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
+echo "${CURRENT_HOME_DAYS[@]};$CURRENT_HOME_HOURS_MORNING_START;$CURRENT_HOME_HOURS_MORNING_END;$CURRENT_HOME_HOURS_AFTERNOON_START;$CURRENT_HOME_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+echo "project_name;commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time;is_overtime;is_saturday;is_sunday" >> "$OUTPUT_FILE"
 
 # if option ALL_REPO_IN_FOLDER = true
 if [ "$ALL_REPO_IN_FOLDER" = true ]; then
