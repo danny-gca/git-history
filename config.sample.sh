@@ -1,6 +1,10 @@
 # Config for working hours ---------------------------
 DATE_BEFORE="2024-01-01"
 
+# Night times
+NIGHT_TIME_START="22:00"
+NIGHT_TIME_END="04:00"
+
 # Working hours before 2024
 BEFORE_DATE_WORKING_HOURS_MORNING_START=08:00
 BEFORE_DATE_WORKING_HOURS_MORNING_END=12:00

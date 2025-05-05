@@ -109,111 +109,67 @@ generateHistory() {
             fi
 
             # Check if the commit was done outside of working hours
-            # check if is before (2024-01-01 for example)
             if [[ "$commit_date" < $DATE_BEFORE ]]; then
-                if [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_END" ]]; then
-                    is_overtime=1
-                fi
-            else
-                # check if is work from home day
-                if [[ " ${CURRENT_HOME_DAYS[@]} " =~ " $commit_day " ]]; then
-                    # if the commit is before morning start OR
-                    # if the commit is after morning end AND
-                    # if the commit is before afternoon start OR
-                    # if the commit is after afternoon end
-                    if [[ "$commit_time" < "$CURRENT_HOME_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$CURRENT_HOME_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_HOME_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$CURRENT_HOME_HOURS_AFTERNOON_END" ]]; then
-                        is_overtime=1
-                    fi
-                fi
-                # check if is work from office day
-                if [[ " ${CURRENT_OFFICE_DAYS[@]} " =~ " $commit_day " ]]; then
-                    # if the commit is before morning start OR
-                    # if the commit is after morning end AND
-                    # if the commit is before afternoon start OR
-                    # if the commit is after afternoon end
-                    if [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_AFTERNOON_END" ]]; then
-                        is_overtime=1
-                    fi
-                fi
+                working_hours_morning_start="$BEFORE_DATE_WORKING_HOURS_MORNING_START"
+                working_hours_morning_end="$BEFORE_DATE_WORKING_HOURS_MORNING_END"
+                working_hours_afternoon_start="$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START"
+                working_hours_afternoon_end="$BEFORE_DATE_WORKING_HOURS_AFTERNOON_END"
+            elif [[ " ${CURRENT_HOME_DAYS[@]} " =~ " $commit_day " ]]; then
+                working_hours_morning_start="$CURRENT_HOME_HOURS_MORNING_START"
+                working_hours_morning_end="$CURRENT_HOME_HOURS_MORNING_END"
+                working_hours_afternoon_start="$CURRENT_HOME_HOURS_AFTERNOON_START"
+                working_hours_afternoon_end="$CURRENT_HOME_HOURS_AFTERNOON_END"
+            elif [[ " ${CURRENT_OFFICE_DAYS[@]} " =~ " $commit_day " ]]; then
+                working_hours_morning_start="$CURRENT_OFFICE_HOURS_MORNING_START"
+                working_hours_morning_end="$CURRENT_OFFICE_HOURS_MORNING_END"
+                working_hours_afternoon_start="$CURRENT_OFFICE_HOURS_AFTERNOON_START"
+                working_hours_afternoon_end="$CURRENT_OFFICE_HOURS_AFTERNOON_END"
             fi
 
-            # math on overtime qty calculation
-            if [[ "$is_overtime" -eq 1 ]]; then
-                # get the difference between the commit time and the working hours
-                
-                # if before 2024 (for example)
-                if [[ "$commit_date" < $DATE_BEFORE ]]; then
-                    # if before morning start
-                    if [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_MORNING_START" ]]; then
-                        # get the difference between the commit time and the morning start
-                        commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                        morning_start_in_seconds=$(date -d "$BEFORE_DATE_WORKING_HOURS_MORNING_START" +%s)
-                        overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
+            if [[ -n "$working_hours_morning_start" ]]; then
+                # check if night time (22h-4h)
+                if [[ "$commit_time" > "$NIGHT_TIME_START" ]]; then
+                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                    night_start_in_seconds=$(date -d "$NIGHT_TIME_START" +%s)
+                    overtime_in_min=$(( (commit_time_in_seconds - night_start_in_seconds) / 60 ))
+                    is_overtime=1
+                elif [[ "$commit_time" < "$NIGHT_TIME_END" ]]; then
+                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                    night_start_in_seconds=$(date -d "$NIGHT_TIME_START" +%s)
+                    before_midnight_in_seconds=$(date -d "23:59" +%s)
+                    midnight_in_seconds=$(date -d "00:00" +%s)
+                    # calculate from night start to midnight
+                    diff_night=$(( (before_midnight_in_seconds - night_start_in_seconds) / 60 ))
+                    # calculate from midnight to commit time
+                    diff_commit=$(( (commit_time_in_seconds - midnight_in_seconds) / 60 ))
+                    # check if the commit time is before or after midnight
+                    overtime_in_min=$(( diff_night + diff_commit ))
+                    is_overtime=1
+                elif [[ "$commit_time" < "$working_hours_morning_start" ]]; then
+                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                    morning_start_in_seconds=$(date -d "$working_hours_morning_start" +%s)
+                    overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
+                    is_overtime=1
+                elif [[ "$commit_time" > "$working_hours_morning_end" && "$commit_time" < "$working_hours_afternoon_start" ]]; then
+                    # Prendre le temps le plus proche
+                    # (exemple 1 : commit à 12h04 et fin de matinée à 12h00 = 4 minutes)
+                    # (exemple 2 : commit à 13h45 et début d'aprem à 14h00 = 15 minutes)
+                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                    morning_end_in_seconds=$(date -d "$working_hours_morning_end" +%s)
+                    afternoon_start_in_seconds=$(date -d "$working_hours_afternoon_start" +%s)
+                    # calcule de la différence entre le commit et la fin de matinée
+                    diff_morning=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
+                    diff_afternoon=$(( (afternoon_start_in_seconds - commit_time_in_seconds) / 60 ))
+                    if [[ $diff_morning -lt $diff_afternoon ]]; then
+                        overtime_in_min=$(( diff_morning ))
+                    else
+                        overtime_in_min=$(( diff_afternoon ))
                     fi
-                    # if after morning end
-                    if [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" ]]; then
-                        # get the difference between the commit time and the morning end
-                        commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                        morning_end_in_seconds=$(date -d "$BEFORE_DATE_WORKING_HOURS_MORNING_END" +%s)
-                        overtime_in_min=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
-                    fi
-                    # if after afternoon start
-                    if [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" ]]; then
-                        # get the difference between the commit time and the afternoon start
-                        commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                        afternoon_start_in_seconds=$(date -d "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" +%s)
-                        overtime_in_min=$(( (commit_time_in_seconds - afternoon_start_in_seconds) / 60 ))
-                    fi
-                else
-                    # if at the office
-                    if [[ " ${CURRENT_OFFICE_DAYS[@]} " =~ " $commit_day " ]]; then
-                        # if before morning start
-                        if [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_MORNING_START" ]]; then
-                            # get the difference between the commit time and the morning start
-                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                            morning_start_in_seconds=$(date -d "$CURRENT_OFFICE_HOURS_MORNING_START" +%s)
-                            overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
-                        fi
-                        # if after morning end
-                        if [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]]; then
-                            # get the difference between the commit time and the morning end
-                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                            morning_end_in_seconds=$(date -d "$CURRENT_OFFICE_HOURS_MORNING_END" +%s)
-                            overtime_in_min=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
-                        fi
-                        # if after afternoon start
-                        if [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]]; then
-                            # get the difference between the commit time and the afternoon start
-                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                            afternoon_start_in_seconds=$(date -d "$CURRENT_OFFICE_HOURS_AFTERNOON_START" +%s)
-                            overtime_in_min=$(( (commit_time_in_seconds - afternoon_start_in_seconds) / 60 ))
-                        fi
-                    fi
-                    
-                    # if at home
-                    if [[ " ${CURRENT_HOME_DAYS[@]} " =~ " $commit_day " ]]; then
-                        # if before morning start
-                        if [[ "$commit_time" < "$CURRENT_HOME_HOURS_MORNING_START" ]]; then
-                            # get the difference between the commit time and the morning start
-                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                            morning_start_in_seconds=$(date -d "$CURRENT_HOME_HOURS_MORNING_START" +%s)
-                            overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
-                        fi
-                        # if after morning end
-                        if [[ "$commit_time" > "$CURRENT_HOME_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_HOME_HOURS_AFTERNOON_START" ]]; then
-                            # get the difference between the commit time and the morning end
-                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                            morning_end_in_seconds=$(date -d "$CURRENT_HOME_HOURS_MORNING_END" +%s)
-                            overtime_in_min=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
-                        fi
-                        # if after afternoon start
-                        if [[ "$commit_time" > "$CURRENT_HOME_HOURS_AFTERNOON_START" ]]; then
-                            # get the difference between the commit time and the afternoon start
-                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                            afternoon_start_in_seconds=$(date -d "$CURRENT_HOME_HOURS_AFTERNOON_START" +%s)
-                            overtime_in_min=$(( (commit_time_in_seconds - afternoon_start_in_seconds) / 60 ))
-                        fi
-                    fi
+                    is_overtime=1
+                elif [[ "$commit_time" > "$working_hours_afternoon_end" ]]; then
+                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                    afternoon_end_in_seconds=$(date -d "$working_hours_afternoon_end" +%s)
+                    overtime_in_min=$(( (commit_time_in_seconds - afternoon_end_in_seconds) / 60 ))
                 fi
             fi
 
