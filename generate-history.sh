@@ -52,6 +52,8 @@ generateHistory() {
     PARAM_USERMAIL=$2
     PARAM_OUTPUT_FILE=$3
 
+    echo "⛏️  Génération de l'historique pour le repository : $PARAM_REPO_PATH"
+
     # Check if the repository exists and move to it
     cd $PARAM_REPO_PATH || {
         echo "Erreur: Impossible d'accéder au repository"
@@ -71,6 +73,7 @@ generateHistory() {
         commit_title=$(echo $line | awk -F'|' '{print $2}' | sed 's/;/,/g')
         commit_date=$(echo $line | awk -F'|' '{print $3}')
         commit_time=$(echo $line | awk -F'|' '{print $4}')
+        overtime_in_min=0 # Overtime quantity in minutes
 
         if [[ -z "${SEEN_COMMITS[$commit_id]}" ]]; then
             # Project name
@@ -106,9 +109,9 @@ generateHistory() {
             fi
 
             # Check if the commit was done outside of working hours
-            # check if is before 2024
-            if [[ "$commit_date" < "2024-01-01" ]]; then
-                if [[ "$commit_time" < "$BEFORE_2024_WORKING_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$BEFORE_2024_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$BEFORE_2024_WORKING_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$BEFORE_2024_WORKING_HOURS_AFTERNOON_END" ]]; then
+            # check if is before (2024-01-01 for example)
+            if [[ "$commit_date" < $DATE_BEFORE ]]; then
+                if [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_MORNING_START" ]] || [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" ]] || [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_END" ]]; then
                     is_overtime=1
                 fi
             else
@@ -134,8 +137,88 @@ generateHistory() {
                 fi
             fi
 
+            # math on overtime qty calculation
+            if [[ "$is_overtime" -eq 1 ]]; then
+                # get the difference between the commit time and the working hours
+                
+                # if before 2024 (for example)
+                if [[ "$commit_date" < $DATE_BEFORE ]]; then
+                    # if before morning start
+                    if [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_MORNING_START" ]]; then
+                        # get the difference between the commit time and the morning start
+                        commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                        morning_start_in_seconds=$(date -d "$BEFORE_DATE_WORKING_HOURS_MORNING_START" +%s)
+                        overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
+                    fi
+                    # if after morning end
+                    if [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" ]]; then
+                        # get the difference between the commit time and the morning end
+                        commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                        morning_end_in_seconds=$(date -d "$BEFORE_DATE_WORKING_HOURS_MORNING_END" +%s)
+                        overtime_in_min=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
+                    fi
+                    # if after afternoon start
+                    if [[ "$commit_time" > "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" ]]; then
+                        # get the difference between the commit time and the afternoon start
+                        commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                        afternoon_start_in_seconds=$(date -d "$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START" +%s)
+                        overtime_in_min=$(( (commit_time_in_seconds - afternoon_start_in_seconds) / 60 ))
+                    fi
+                else
+                    # if at the office
+                    if [[ " ${CURRENT_OFFICE_DAYS[@]} " =~ " $commit_day " ]]; then
+                        # if before morning start
+                        if [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_MORNING_START" ]]; then
+                            # get the difference between the commit time and the morning start
+                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                            morning_start_in_seconds=$(date -d "$CURRENT_OFFICE_HOURS_MORNING_START" +%s)
+                            overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
+                        fi
+                        # if after morning end
+                        if [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]]; then
+                            # get the difference between the commit time and the morning end
+                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                            morning_end_in_seconds=$(date -d "$CURRENT_OFFICE_HOURS_MORNING_END" +%s)
+                            overtime_in_min=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
+                        fi
+                        # if after afternoon start
+                        if [[ "$commit_time" > "$CURRENT_OFFICE_HOURS_AFTERNOON_START" ]]; then
+                            # get the difference between the commit time and the afternoon start
+                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                            afternoon_start_in_seconds=$(date -d "$CURRENT_OFFICE_HOURS_AFTERNOON_START" +%s)
+                            overtime_in_min=$(( (commit_time_in_seconds - afternoon_start_in_seconds) / 60 ))
+                        fi
+                    fi
+                    
+                    # if at home
+                    if [[ " ${CURRENT_HOME_DAYS[@]} " =~ " $commit_day " ]]; then
+                        # if before morning start
+                        if [[ "$commit_time" < "$CURRENT_HOME_HOURS_MORNING_START" ]]; then
+                            # get the difference between the commit time and the morning start
+                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                            morning_start_in_seconds=$(date -d "$CURRENT_HOME_HOURS_MORNING_START" +%s)
+                            overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
+                        fi
+                        # if after morning end
+                        if [[ "$commit_time" > "$CURRENT_HOME_HOURS_MORNING_END" ]] && [[ "$commit_time" < "$CURRENT_HOME_HOURS_AFTERNOON_START" ]]; then
+                            # get the difference between the commit time and the morning end
+                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                            morning_end_in_seconds=$(date -d "$CURRENT_HOME_HOURS_MORNING_END" +%s)
+                            overtime_in_min=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
+                        fi
+                        # if after afternoon start
+                        if [[ "$commit_time" > "$CURRENT_HOME_HOURS_AFTERNOON_START" ]]; then
+                            # get the difference between the commit time and the afternoon start
+                            commit_time_in_seconds=$(date -d "$commit_time" +%s)
+                            afternoon_start_in_seconds=$(date -d "$CURRENT_HOME_HOURS_AFTERNOON_START" +%s)
+                            overtime_in_min=$(( (commit_time_in_seconds - afternoon_start_in_seconds) / 60 ))
+                        fi
+                    fi
+                fi
+            fi
+
             # Write the commit information to the CSV file
-            echo "$project_name;$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time;$is_overtime;$is_saturday;$is_sunday" >> "$PARAM_OUTPUT_FILE"
+            echo "$project_name;$commit_id;\"$branch\";$commit_title;$modified_files;$added_lines;$deleted_lines;$commit_date;$commit_time;$is_overtime;$is_saturday;$is_sunday;$overtime_in_min" >> "$PARAM_OUTPUT_FILE"
 
             # Mark the commit as seen
             SEEN_COMMITS["$commit_id"]=1
@@ -144,12 +227,13 @@ generateHistory() {
 }
 
 # Creation of the CSV file
+echo "▶️  Création du fichier"
 echo "user;repository" > "$OUTPUT_FILE"
 echo "$USER_EMAIL;$REPO_PATH" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-echo "Before 2024 working hours;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
-echo ";$BEFORE_2024_WORKING_HOURS_MORNING_START;$BEFORE_2024_WORKING_HOURS_MORNING_END;$BEFORE_2024_WORKING_HOURS_AFTERNOON_START;$BEFORE_2024_WORKING_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
+echo "Before $DATE_BEFORE working hours;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
+echo ";$BEFORE_DATE_WORKING_HOURS_MORNING_START;$BEFORE_DATE_WORKING_HOURS_MORNING_END;$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START;$BEFORE_DATE_WORKING_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
 echo "Current working hours at office;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
@@ -160,10 +244,11 @@ echo "Current working hours at home;morning_start;morning_end;afternoon_start;af
 echo "${CURRENT_HOME_DAYS[@]};$CURRENT_HOME_HOURS_MORNING_START;$CURRENT_HOME_HOURS_MORNING_END;$CURRENT_HOME_HOURS_AFTERNOON_START;$CURRENT_HOME_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-echo "project_name;commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time;is_overtime;is_saturday;is_sunday" >> "$OUTPUT_FILE"
+echo "project_name;commit_id;branch;commit_title;modified_files;added_lines;deleted_lines;date;time;is_overtime;is_saturday;is_sunday;overtime_in_min" >> "$OUTPUT_FILE"
 
 # if option ALL_REPO_IN_FOLDER = true
 if [ "$ALL_REPO_IN_FOLDER" = true ]; then
+    echo "⚙️  Parcours de tous les repo dans : $REPO_PATH"
     REPOS_TO_CHECK=$(find "$REPO_PATH" -type d -name .git -exec dirname {} \;) || {
         echo "Erreur: Impossible de trouver les repositories"
         exit 1
