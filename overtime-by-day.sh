@@ -85,7 +85,7 @@ generateOvertimeByDay() {
             # Check if the commit was done on a weekend
             if [[ "$commit_day" -eq 6 ]]; then
                 # Check if min_saturday is equal to 0
-                if [[ "${DATES_ARRAY[$commit_date,min_saturday]}" -eq 0 ]]; then
+                if [[ "${DATES_ARRAY[$commit_date,min_saturday]}" == 0 ]]; then
                     DATES_ARRAY["$commit_date,min_saturday"]=$output_date_time
                     continue
                 fi
@@ -110,7 +110,7 @@ generateOvertimeByDay() {
             fi
             if [[ "$commit_day" -eq 7 ]]; then
                 # Check if min_sunday is equal to 0
-                if [[ "${DATES_ARRAY[$commit_date,min_sunday]}" -eq 0 ]]; then
+                if [[ "${DATES_ARRAY[$commit_date,min_sunday]}" == 0 ]]; then
                     DATES_ARRAY["$commit_date,min_sunday"]=$output_date_time
                     continue
                 fi
@@ -157,7 +157,7 @@ generateOvertimeByDay() {
                 # check if night time (22h-4h)
                 if [[ "$commit_time" > "$NIGHT_TIME_START" ]]; then
                     # Check if min_night is equal to 0
-                    if [[ "${DATES_ARRAY[$commit_date,min_night]}" -eq 0 ]]; then
+                    if [[ "${DATES_ARRAY[$commit_date,min_night]}" == 0 ]]; then
                         DATES_ARRAY["$commit_date,min_night"]=$output_date_time
                         continue
                     fi
@@ -181,7 +181,7 @@ generateOvertimeByDay() {
                     continue
                 elif [[ "$commit_time" < "$NIGHT_TIME_END" ]]; then
                     # Check if min_night is equal to 0
-                    if [[ "${DATES_ARRAY[$commit_date,min_night]}" -eq 0 ]]; then
+                    if [[ "${DATES_ARRAY[$commit_date,min_night]}" == 0 ]]; then
                         DATES_ARRAY["$commit_date,min_night"]=$output_date_time
                         continue
                     fi
@@ -238,8 +238,6 @@ generateOvertimeByDay() {
     done < "$PARAM_CSV_PATH"
 
     # Write the dates and overtime to the new CSV file
-    echo "date;before_morning;after_morning;before_afternoon;afterwork;night;saturday;sunday;TOTAL" >> "$PARAM_OUTPUT_FILE"
-
     # Parcourir le tableau associatif
     # Nouveau tableau associatif pour stocker les résultats
     declare -A OUTPUT_DATES_ARRAY
@@ -295,23 +293,7 @@ generateOvertimeByDay() {
 
 # Creation of the CSV file
 echo "▶️  Création du fichier"
-echo "csv_path;output_path" > "$OUTPUT_FILE"
-echo "$PATH_TO_CSV;$OUTPUT_FILE" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-echo "Before $DATE_BEFORE working hours;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
-echo ";$BEFORE_DATE_WORKING_HOURS_MORNING_START;$BEFORE_DATE_WORKING_HOURS_MORNING_END;$BEFORE_DATE_WORKING_HOURS_AFTERNOON_START;$BEFORE_DATE_WORKING_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-echo "Current working hours at office;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
-echo "${CURRENT_OFFICE_DAYS[@]};$CURRENT_OFFICE_HOURS_MORNING_START;$CURRENT_OFFICE_HOURS_MORNING_END;$CURRENT_OFFICE_HOURS_AFTERNOON_START;$CURRENT_OFFICE_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-echo "Current working hours at home;morning_start;morning_end;afternoon_start;afternoon_end" >> "$OUTPUT_FILE"
-echo "${CURRENT_HOME_DAYS[@]};$CURRENT_HOME_HOURS_MORNING_START;$CURRENT_HOME_HOURS_MORNING_END;$CURRENT_HOME_HOURS_AFTERNOON_START;$CURRENT_HOME_HOURS_AFTERNOON_END" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-echo "date;before_morning;after_morning;before_afternoon;afterwork;night;saturday;sunday" >> "$OUTPUT_FILE"
+echo "date;before_morning;after_morning;before_afternoon;afterwork;night;saturday;sunday;total" >> "$OUTPUT_FILE"
 
 generateOvertimeByDay "$PATH_TO_CSV" "$OUTPUT_PATH" "$OUTPUT_FILE"
 
