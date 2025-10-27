@@ -236,17 +236,20 @@ function main() {
 
     const total = beforeMorning + afterMorning + beforeAfternoon + afterwork + night + saturday + sunday;
 
-    dayOvertimes.push({
-      date: dateStr,
-      beforeMorning,
-      afterMorning,
-      beforeAfternoon,
-      afterwork,
-      night,
-      saturday,
-      sunday,
-      total,
-    });
+    // Only add days with at least some overtime
+    if (total > 0) {
+      dayOvertimes.push({
+        date: dateStr,
+        beforeMorning,
+        afterMorning,
+        beforeAfternoon,
+        afterwork,
+        night,
+        saturday,
+        sunday,
+        total,
+      });
+    }
   }
 
   console.log('▶️  Création du fichier CSV...');

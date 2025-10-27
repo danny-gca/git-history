@@ -85,7 +85,7 @@ export function writeCommitsToCSV(
 
 export function writeDayOvertimeToCSV(dayOvertimes: DayOvertime[], outputPath: string): void {
   const data = dayOvertimes
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => b.date.localeCompare(a.date)) // Sort from newest to oldest
     .map(day => [
       day.date,
       day.beforeMorning,
