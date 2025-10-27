@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { format } from 'date-fns';
+import { resolve } from 'path';
 import { loadConfig } from './config.js';
 import { parseGitHistory, findAllRepositories } from './git-parser.js';
 import { processCommits } from './overtime-calc.js';
@@ -10,6 +11,7 @@ interface CliOptions {
   all: boolean;
   userEmail: string;
   path: string;
+  exportPath: string;
 }
 
 function parseArgs(): CliOptions {
@@ -17,12 +19,22 @@ function parseArgs(): CliOptions {
   let all = false;
   let userEmail = '';
   let path = '';
+  let exportPath = '';
 
   let i = 0;
   while (i < args.length) {
     if (args[i] === '--all') {
       all = true;
       i++;
+    } else if (args[i] === '-e' || args[i] === '--email') {
+      userEmail = args[i + 1] || '';
+      i += 2;
+    } else if (args[i] === '-p' || args[i] === '--path') {
+      path = args[i + 1] || '';
+      i += 2;
+    } else if (args[i] === '-x' || args[i] === '--export') {
+      exportPath = args[i + 1] || '';
+      i += 2;
     } else if (!userEmail) {
       userEmail = args[i];
       i++;
@@ -36,12 +48,26 @@ function parseArgs(): CliOptions {
 
   if (!userEmail || !path) {
     console.error('Usage:');
-    console.error('-----> exemple 1 : npm run generate -- --all <user_email> <folder_path>');
-    console.error('-----> exemple 2 : npm run generate -- <user_email> <repository_path>');
+    console.error('-----> Option 1 (new syntax):');
+    console.error('       npm run generate -- -e <email> -p <path> [--all] [-x <export_path>]');
+    console.error('');
+    console.error('-----> Option 2 (old syntax):');
+    console.error('       npm run generate -- [--all] <user_email> <repository_path>');
+    console.error('');
+    console.error('Options:');
+    console.error('  -e, --email      User email');
+    console.error('  -p, --path       Repository path (or folder path with --all)');
+    console.error('  -x, --export     Custom export path (default: ./export)');
+    console.error('  --all            Process all repositories in folder');
     process.exit(1);
   }
 
-  return { all, userEmail, path };
+  // Default export path
+  if (!exportPath) {
+    exportPath = resolve(process.cwd(), 'export');
+  }
+
+  return { all, userEmail, path, exportPath };
 }
 
 function main() {
@@ -51,7 +77,7 @@ function main() {
   const options = parseArgs();
   const currentDate = format(new Date(), 'yyyy-MM-dd-HH-mm');
   const userName = options.userEmail.split('@')[0];
-  const outputFile = `${options.path}/git-history.${userName}.${currentDate}.csv`;
+  const outputFile = `${options.exportPath}/git-history.${userName}.${currentDate}.csv`;
 
   let allCommits: CommitWithOvertime[] = [];
 

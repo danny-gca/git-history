@@ -1,0 +1,11 @@
+#!/bin/bash
+# Wrapper script for overtime-by-day
+
+# Check if node_modules exists
+if [ ! -d "node_modules" ]; then
+    echo "⚠️  Dependencies not installed. Running npm install..."
+    npm install
+fi
+
+# Run the TypeScript script with tsx
+npx tsx src/overtime-by-day.ts "$@"
