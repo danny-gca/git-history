@@ -170,6 +170,7 @@ generateHistory() {
                     commit_time_in_seconds=$(date -d "$commit_time" +%s)
                     afternoon_end_in_seconds=$(date -d "$working_hours_afternoon_end" +%s)
                     overtime_in_min=$(( (commit_time_in_seconds - afternoon_end_in_seconds) / 60 ))
+                    is_overtime=1
                 fi
             fi
 

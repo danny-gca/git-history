@@ -66,10 +66,14 @@ generateOvertimeByDay() {
             output_date_time=$(date -d "$commit_date $commit_time" +%Y-%m-%dT%H:%M:%S)
             
             # Initialize the dates in the array
-            if [[ -z "${DATES_ARRAY[$commit_date,before_morning]}" ]]; then
+            if [[ -z "${DATES_ARRAY[$commit_date,min_before_morning]}" ]]; then
+                DATES_ARRAY["$commit_date,min_before_morning"]=0
                 DATES_ARRAY["$commit_date,before_morning"]=0
+                DATES_ARRAY["$commit_date,min_after_morning"]=0
                 DATES_ARRAY["$commit_date,after_morning"]=0
+                DATES_ARRAY["$commit_date,max_before_afternoon"]=0
                 DATES_ARRAY["$commit_date,before_afternoon"]=0
+                DATES_ARRAY["$commit_date,max_afterwork"]=0
                 DATES_ARRAY["$commit_date,afterwork"]=0
                 DATES_ARRAY["$commit_date,min_night"]=0
                 DATES_ARRAY["$commit_date,max_night"]=0
@@ -87,51 +91,49 @@ generateOvertimeByDay() {
                 # Check if min_saturday is equal to 0
                 if [[ "${DATES_ARRAY[$commit_date,min_saturday]}" == 0 ]]; then
                     DATES_ARRAY["$commit_date,min_saturday"]=$output_date_time
-                    continue
-                fi
-                # Check if min_saturday is greater than the current date
-                if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_saturday]}" ]]; then
-                    DATES_ARRAY["$commit_date,max_saturday"]="${DATES_ARRAY[$commit_date,min_saturday]}"
-                    DATES_ARRAY["$commit_date,min_saturday"]=$output_date_time
                 else
-                    DATES_ARRAY["$commit_date,max_saturday"]=$output_date_time
+                    # Check if min_saturday is greater than the current date
+                    if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_saturday]}" ]]; then
+                        DATES_ARRAY["$commit_date,max_saturday"]="${DATES_ARRAY[$commit_date,min_saturday]}"
+                        DATES_ARRAY["$commit_date,min_saturday"]=$output_date_time
+                    elif [[ "$output_date_time" > "${DATES_ARRAY[$commit_date,max_saturday]}" ]]; then
+                        DATES_ARRAY["$commit_date,max_saturday"]=$output_date_time
+                    fi
+                    # Calculate the total time spent on Saturday
+                    min_saturday="${DATES_ARRAY[$commit_date,min_saturday]}"
+                    max_saturday="${DATES_ARRAY[$commit_date,max_saturday]}"
+                    # Calculate the difference in seconds
+                    min_saturday_in_seconds=$(date -d "$min_saturday" +%s)
+                    max_saturday_in_seconds=$(date -d "$max_saturday" +%s)
+                    diff_in_seconds=$(( max_saturday_in_seconds - min_saturday_in_seconds ))
+                    # Convert to minutes
+                    diff_in_minutes=$(( diff_in_seconds / 60 ))
+                    DATES_ARRAY["$commit_date,total_saturday"]=$diff_in_minutes
                 fi
-                # Calculate the total time spent on Saturday
-                min_saturday="${DATES_ARRAY[$commit_date,min_saturday]}"
-                max_saturday="${DATES_ARRAY[$commit_date,max_saturday]}"
-                # Calculate the difference in seconds
-                min_saturday_in_seconds=$(date -d "$min_saturday" +%s)
-                max_saturday_in_seconds=$(date -d "$max_saturday" +%s)
-                diff_in_seconds=$(( max_saturday_in_seconds - min_saturday_in_seconds ))
-                # Convert to minutes
-                diff_in_minutes=$(( diff_in_seconds / 60 ))
-                DATES_ARRAY["$commit_date,total_saturday"]=$diff_in_minutes
-                continue
             fi
             if [[ "$commit_day" -eq 7 ]]; then
                 # Check if min_sunday is equal to 0
                 if [[ "${DATES_ARRAY[$commit_date,min_sunday]}" == 0 ]]; then
                     DATES_ARRAY["$commit_date,min_sunday"]=$output_date_time
-                    continue
-                fi
-                # Check if min_sunday is greater than the current date
-                if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_sunday]}" ]]; then
-                    DATES_ARRAY["$commit_date,max_sunday"]="${DATES_ARRAY[$commit_date,min_sunday]}"
-                    DATES_ARRAY["$commit_date,min_sunday"]=$output_date_time
                 else
-                    DATES_ARRAY["$commit_date,max_sunday"]=$output_date_time
+                    # Check if min_sunday is greater than the current date
+                    if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_sunday]}" ]]; then
+                        DATES_ARRAY["$commit_date,max_sunday"]="${DATES_ARRAY[$commit_date,min_sunday]}"
+                        DATES_ARRAY["$commit_date,min_sunday"]=$output_date_time
+                    elif [[ "$output_date_time" > "${DATES_ARRAY[$commit_date,max_sunday]}" ]]; then
+                        DATES_ARRAY["$commit_date,max_sunday"]=$output_date_time
+                    fi
+                    # Calculate the total time spent on Sunday
+                    min_sunday="${DATES_ARRAY[$commit_date,min_sunday]}"
+                    max_sunday="${DATES_ARRAY[$commit_date,max_sunday]}"
+                    # Calculate the difference in seconds
+                    min_sunday_in_seconds=$(date -d "$min_sunday" +%s)
+                    max_sunday_in_seconds=$(date -d "$max_sunday" +%s)
+                    diff_in_seconds=$(( max_sunday_in_seconds - min_sunday_in_seconds ))
+                    # Convert to minutes
+                    diff_in_minutes=$(( diff_in_seconds / 60 ))
+                    DATES_ARRAY["$commit_date,total_sunday"]=$diff_in_minutes
                 fi
-                # Calculate the total time spent on Sunday
-                min_sunday="${DATES_ARRAY[$commit_date,min_sunday]}"
-                max_sunday="${DATES_ARRAY[$commit_date,max_sunday]}"
-                # Calculate the difference in seconds
-                min_sunday_in_seconds=$(date -d "$min_sunday" +%s)
-                max_sunday_in_seconds=$(date -d "$max_sunday" +%s)
-                diff_in_seconds=$(( max_sunday_in_seconds - min_sunday_in_seconds ))
-                # Convert to minutes
-                diff_in_minutes=$(( diff_in_seconds / 60 ))
-                DATES_ARRAY["$commit_date,total_sunday"]=$diff_in_minutes
-                continue
             fi
 
             # Check if the commit was done outside of working hours
@@ -155,83 +157,96 @@ generateOvertimeByDay() {
             # Check if the commit was done before morning working hours
             if [[ -n "$working_hours_morning_start" ]]; then
                 # check if night time (22h-4h)
-                if [[ "$commit_time" > "$NIGHT_TIME_START" ]]; then
+                if [[ "$commit_time" > "$NIGHT_TIME_START" || "$commit_time" < "$NIGHT_TIME_END" ]]; then
                     # Check if min_night is equal to 0
                     if [[ "${DATES_ARRAY[$commit_date,min_night]}" == 0 ]]; then
                         DATES_ARRAY["$commit_date,min_night"]=$output_date_time
-                        continue
-                    fi
-                    # Check if min_night is greater than the current date
-                    if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_night]}" ]]; then
-                        DATES_ARRAY["$commit_date,max_night"]="${DATES_ARRAY[$commit_date,min_night]}"
-                        DATES_ARRAY["$commit_date,min_night"]=$output_date_time
                     else
-                        DATES_ARRAY["$commit_date,max_night"]=$output_date_time
+                        # Check if min_night is greater than the current date
+                        if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_night]}" ]]; then
+                            DATES_ARRAY["$commit_date,max_night"]="${DATES_ARRAY[$commit_date,min_night]}"
+                            DATES_ARRAY["$commit_date,min_night"]=$output_date_time
+                        elif [[ "$output_date_time" > "${DATES_ARRAY[$commit_date,max_night]}" ]]; then
+                            DATES_ARRAY["$commit_date,max_night"]=$output_date_time
+                        fi
+                        # Calculate the total time spent at night
+                        min_night="${DATES_ARRAY[$commit_date,min_night]}"
+                        max_night="${DATES_ARRAY[$commit_date,max_night]}"
+                        # Calculate the difference in seconds
+                        min_night_in_seconds=$(date -d "$min_night" +%s)
+                        max_night_in_seconds=$(date -d "$max_night" +%s)
+                        diff_in_seconds=$(( max_night_in_seconds - min_night_in_seconds ))
+                        # Convert to minutes
+                        diff_in_minutes=$(( diff_in_seconds / 60 ))
+                        DATES_ARRAY["$commit_date,total_night"]=$diff_in_minutes
                     fi
-                    # Calculate the total time spent at night
-                    min_night="${DATES_ARRAY[$commit_date,min_night]}"
-                    max_night="${DATES_ARRAY[$commit_date,max_night]}"
-                    # Calculate the difference in seconds
-                    min_night_in_seconds=$(date -d "$min_night" +%s)
-                    max_night_in_seconds=$(date -d "$max_night" +%s)
-                    diff_in_seconds=$(( max_night_in_seconds - min_night_in_seconds ))
-                    # Convert to minutes
+                elif [[ "$commit_time" < "$working_hours_morning_start" ]]; then
+                    # Stocker le commit le plus tôt avant le début du matin
+                    if [[ "${DATES_ARRAY[$commit_date,min_before_morning]}" == 0 ]]; then
+                        DATES_ARRAY["$commit_date,min_before_morning"]=$output_date_time
+                    elif [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_before_morning]}" ]]; then
+                        DATES_ARRAY["$commit_date,min_before_morning"]=$output_date_time
+                    fi
+                    # Calculer le temps entre le premier commit et l'heure de début
+                    min_before_morning="${DATES_ARRAY[$commit_date,min_before_morning]}"
+                    min_before_morning_in_seconds=$(date -d "$min_before_morning" +%s)
+                    morning_start_in_seconds=$(date -d "$commit_date $working_hours_morning_start" +%s)
+                    diff_in_seconds=$(( morning_start_in_seconds - min_before_morning_in_seconds ))
                     diff_in_minutes=$(( diff_in_seconds / 60 ))
-                    DATES_ARRAY["$commit_date,total_night"]=$diff_in_minutes
-                    continue
-                elif [[ "$commit_time" < "$NIGHT_TIME_END" ]]; then
-                    # Check if min_night is equal to 0
-                    if [[ "${DATES_ARRAY[$commit_date,min_night]}" == 0 ]]; then
-                        DATES_ARRAY["$commit_date,min_night"]=$output_date_time
-                        continue
-                    fi
-                    # Check if min_night is greater than the current date
-                    if [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,min_night]}" ]]; then
-                        DATES_ARRAY["$commit_date,max_night"]="${DATES_ARRAY[$commit_date,min_night]}"
-                        DATES_ARRAY["$commit_date,min_night"]=$output_date_time
-                    else
-                        DATES_ARRAY["$commit_date,max_night"]=$output_date_time
-                    fi
-                    # Calculate the total time spent at night
-                    min_night="${DATES_ARRAY[$commit_date,min_night]}"
-                    max_night="${DATES_ARRAY[$commit_date,max_night]}"
-                    # Calculate the difference in seconds
-                    min_night_in_seconds=$(date -d "$min_night" +%s)
-                    max_night_in_seconds=$(date -d "$max_night" +%s)
-                    diff_in_seconds=$(( max_night_in_seconds - min_night_in_seconds ))
-                    # Convert to minutes
-                    diff_in_minutes=$(( diff_in_seconds / 60 ))
-                    DATES_ARRAY["$commit_date,total_night"]=$diff_in_minutes
-                    continue
-                fi
-
-                if [[ "$commit_time" < "$working_hours_morning_start" ]]; then
-                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                    morning_start_in_seconds=$(date -d "$working_hours_morning_start" +%s)
-                    overtime_in_min=$(( (morning_start_in_seconds - commit_time_in_seconds) / 60 ))
-                    DATES_ARRAY["$commit_date,before_morning"]=$overtime_in_min
+                    DATES_ARRAY["$commit_date,before_morning"]=$diff_in_minutes
                 elif [[ "$commit_time" > "$working_hours_morning_end" && "$commit_time" < "$working_hours_afternoon_start" ]]; then
-                    # Prendre le temps le plus proche
-                    # (exemple 1 : commit à 12h04 et fin de matinée à 12h00 = 4 minutes)
-                    # (exemple 2 : commit à 13h45 et début d'aprem à 14h00 = 15 minutes)
+                    # Calculer la différence entre le commit et la fin de matinée / début d'après-midi
                     commit_time_in_seconds=$(date -d "$commit_time" +%s)
                     morning_end_in_seconds=$(date -d "$working_hours_morning_end" +%s)
                     afternoon_start_in_seconds=$(date -d "$working_hours_afternoon_start" +%s)
-                    # calcule de la différence entre le commit et la fin de matinée
                     diff_morning=$(( (commit_time_in_seconds - morning_end_in_seconds) / 60 ))
                     diff_afternoon=$(( (afternoon_start_in_seconds - commit_time_in_seconds) / 60 ))
+
+                    # Après la fin du matin (plus proche de morning_end)
                     if [[ $diff_morning -lt $diff_afternoon ]]; then
-                        overtime_in_min=$(( diff_morning ))
-                        DATES_ARRAY["$commit_date,after_morning"]=$overtime_in_min
+                        # Stocker le commit le plus tard après la fin du matin
+                        if [[ "${DATES_ARRAY[$commit_date,min_after_morning]}" == 0 ]]; then
+                            DATES_ARRAY["$commit_date,min_after_morning"]=$output_date_time
+                        elif [[ "$output_date_time" > "${DATES_ARRAY[$commit_date,min_after_morning]}" ]]; then
+                            DATES_ARRAY["$commit_date,min_after_morning"]=$output_date_time
+                        fi
+                        # Calculer le temps entre la fin du matin et le dernier commit
+                        min_after_morning="${DATES_ARRAY[$commit_date,min_after_morning]}"
+                        min_after_morning_in_seconds=$(date -d "$min_after_morning" +%s)
+                        morning_end_in_seconds=$(date -d "$commit_date $working_hours_morning_end" +%s)
+                        diff_in_seconds=$(( min_after_morning_in_seconds - morning_end_in_seconds ))
+                        diff_in_minutes=$(( diff_in_seconds / 60 ))
+                        DATES_ARRAY["$commit_date,after_morning"]=$diff_in_minutes
+                    # Avant le début de l'après-midi (plus proche de afternoon_start)
                     else
-                        overtime_in_min=$(( diff_afternoon ))
-                        DATES_ARRAY["$commit_date,before_afternoon"]=$overtime_in_min
+                        # Stocker le commit le plus tôt avant le début de l'après-midi
+                        if [[ "${DATES_ARRAY[$commit_date,max_before_afternoon]}" == 0 ]]; then
+                            DATES_ARRAY["$commit_date,max_before_afternoon"]=$output_date_time
+                        elif [[ "$output_date_time" < "${DATES_ARRAY[$commit_date,max_before_afternoon]}" ]]; then
+                            DATES_ARRAY["$commit_date,max_before_afternoon"]=$output_date_time
+                        fi
+                        # Calculer le temps entre le premier commit et le début de l'après-midi
+                        max_before_afternoon="${DATES_ARRAY[$commit_date,max_before_afternoon]}"
+                        max_before_afternoon_in_seconds=$(date -d "$max_before_afternoon" +%s)
+                        afternoon_start_in_seconds=$(date -d "$commit_date $working_hours_afternoon_start" +%s)
+                        diff_in_seconds=$(( afternoon_start_in_seconds - max_before_afternoon_in_seconds ))
+                        diff_in_minutes=$(( diff_in_seconds / 60 ))
+                        DATES_ARRAY["$commit_date,before_afternoon"]=$diff_in_minutes
                     fi
                 elif [[ "$commit_time" > "$working_hours_afternoon_end" ]]; then
-                    commit_time_in_seconds=$(date -d "$commit_time" +%s)
-                    afternoon_end_in_seconds=$(date -d "$working_hours_afternoon_end" +%s)
-                    overtime_in_min=$(( (commit_time_in_seconds - afternoon_end_in_seconds) / 60 ))
-                    DATES_ARRAY["$commit_date,afterwork"]=$overtime_in_min
+                    # Stocker le commit le plus tard après la fin de l'après-midi
+                    if [[ "${DATES_ARRAY[$commit_date,max_afterwork]}" == 0 ]]; then
+                        DATES_ARRAY["$commit_date,max_afterwork"]=$output_date_time
+                    elif [[ "$output_date_time" > "${DATES_ARRAY[$commit_date,max_afterwork]}" ]]; then
+                        DATES_ARRAY["$commit_date,max_afterwork"]=$output_date_time
+                    fi
+                    # Calculer le temps entre la fin de l'après-midi et le dernier commit
+                    max_afterwork="${DATES_ARRAY[$commit_date,max_afterwork]}"
+                    max_afterwork_in_seconds=$(date -d "$max_afterwork" +%s)
+                    afternoon_end_in_seconds=$(date -d "$commit_date $working_hours_afternoon_end" +%s)
+                    diff_in_seconds=$(( max_afterwork_in_seconds - afternoon_end_in_seconds ))
+                    diff_in_minutes=$(( diff_in_seconds / 60 ))
+                    DATES_ARRAY["$commit_date,afterwork"]=$diff_in_minutes
                 fi
             fi
         fi
