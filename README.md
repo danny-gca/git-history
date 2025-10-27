@@ -52,7 +52,25 @@ Additionally, you can aggregate overtime by day with the `overtime-by-day` scrip
 
 ## ⚙️ Configuration
 
-Edit the `.env` file to customize your working hours:
+Edit the `.env` file to customize your settings:
+
+### Script defaults (optional)
+
+```env
+# Default user email (optional)
+USER_EMAIL=your@email.com
+
+# Default repository path (optional)
+PROJECT_PATH=~/projects/my-project
+
+# Default export path (optional, defaults to ./export)
+# EXPORT_PATH=~/custom-export
+
+# Process all repositories in folder (true/false, optional)
+PROCESS_ALL=false
+```
+
+### Working hours configuration
 
 ```env
 # Date before which old working hours apply (YYYY-MM-DD)
@@ -91,7 +109,23 @@ CURRENT_OFFICE_AFTERNOON_END=16:30
 
 The script generates CSV files in the `./export` folder by default.
 
-#### Recommended syntax (with options)
+#### Method 1: Using .env defaults (recommended)
+
+Configure your defaults in `.env`:
+
+```env
+USER_EMAIL=your@email.com
+PROJECT_PATH=~/projects/my-folder
+PROCESS_ALL=true
+```
+
+Then simply run:
+
+```bash
+./git-history
+```
+
+#### Method 2: With command line options
 
 ```bash
 # For a single project
@@ -104,7 +138,19 @@ The script generates CSV files in the `./export` folder by default.
 ./git-history --all -e your@mail.org -p ~/your/folder/path -x ~/custom-export
 ```
 
-#### Legacy syntax (still supported)
+#### Method 3: Override .env defaults
+
+You can override any .env default with command line options:
+
+```bash
+# Use .env defaults but change the email
+./git-history -e other@email.com
+
+# Use .env defaults but change the path
+./git-history -p ~/different/project
+```
+
+#### Method 4: Legacy syntax (still supported)
 
 ```bash
 # For a single project
@@ -116,10 +162,10 @@ The script generates CSV files in the `./export` folder by default.
 
 #### Available options
 
-- `-e, --email` : User email address
-- `-p, --path` : Repository path (or folder path with --all)
-- `-x, --export` : Custom export folder (default: ./export)
-- `--all` : Process all repositories in the specified folder
+- `-e, --email` : User email address (overrides `USER_EMAIL` in .env)
+- `-p, --path` : Repository path (overrides `PROJECT_PATH` in .env)
+- `-x, --export` : Custom export folder (overrides `EXPORT_PATH` in .env, default: ./export)
+- `--all` : Process all repositories in folder (overrides `PROCESS_ALL` in .env)
 
 ### 📊 Aggregate overtime by day
 

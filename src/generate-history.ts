@@ -14,13 +14,21 @@ interface CliOptions {
   exportPath: string;
 }
 
+function getEnvOption(key: string): string | undefined {
+  const value = process.env[key];
+  return value && value.trim() !== '' ? value : undefined;
+}
+
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2);
-  let all = false;
-  let userEmail = '';
-  let path = '';
-  let exportPath = '';
 
+  // Load defaults from .env
+  let all = getEnvOption('PROCESS_ALL') === 'true';
+  let userEmail = getEnvOption('USER_EMAIL') || '';
+  let path = getEnvOption('PROJECT_PATH') || '';
+  let exportPath = getEnvOption('EXPORT_PATH') || '';
+
+  // Override with command line arguments
   let i = 0;
   while (i < args.length) {
     if (args[i] === '--all') {
@@ -48,18 +56,36 @@ function parseArgs(): CliOptions {
 
   if (!userEmail || !path) {
     console.error('Usage:');
-    console.error('-----> Option 1 (new syntax):');
-    console.error('       npm run generate -- -e <email> -p <path> [--all] [-x <export_path>]');
+    console.error('-----> Option 1 (with options):');
+    console.error('       ./git-history -e <email> -p <path> [--all] [-x <export_path>]');
     console.error('');
-    console.error('-----> Option 2 (old syntax):');
-    console.error('       npm run generate -- [--all] <user_email> <repository_path>');
+    console.error('-----> Option 2 (legacy syntax):');
+    console.error('       ./git-history [--all] <user_email> <repository_path>');
+    console.error('');
+    console.error('-----> Option 3 (using .env defaults):');
+    console.error('       ./git-history');
+    console.error('       (requires USER_EMAIL and PROJECT_PATH in .env)');
     console.error('');
     console.error('Options:');
-    console.error('  -e, --email      User email');
-    console.error('  -p, --path       Repository path (or folder path with --all)');
-    console.error('  -x, --export     Custom export path (default: ./export)');
-    console.error('  --all            Process all repositories in folder');
+    console.error('  -e, --email      User email (overrides USER_EMAIL in .env)');
+    console.error('  -p, --path       Repository path (overrides PROJECT_PATH in .env)');
+    console.error('  -x, --export     Custom export path (overrides EXPORT_PATH in .env, default: ./export)');
+    console.error('  --all            Process all repositories in folder (overrides PROCESS_ALL in .env)');
+    console.error('');
+    console.error('Environment variables (.env):');
+    console.error('  USER_EMAIL       Default user email');
+    console.error('  PROJECT_PATH     Default repository or folder path');
+    console.error('  EXPORT_PATH      Default export path (optional)');
+    console.error('  PROCESS_ALL      true/false to process all repositories (optional)');
     process.exit(1);
+  }
+
+  // Expand ~ to home directory
+  if (path.startsWith('~')) {
+    path = path.replace('~', process.env.HOME || '~');
+  }
+  if (exportPath && exportPath.startsWith('~')) {
+    exportPath = exportPath.replace('~', process.env.HOME || '~');
   }
 
   // Default export path
