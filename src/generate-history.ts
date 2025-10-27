@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 import { format } from 'date-fns';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import * as readline from 'readline';
 import { loadConfig } from './config.js';
 import { parseGitHistory, findAllRepositories } from './git-parser.js';
 import { processCommits } from './overtime-calc.js';
 import { writeCommitsToCSV } from './csv-writer.js';
 import { CommitWithOvertime } from './types.js';
+import { generateOvertimeByDay } from './overtime-by-day-lib.js';
 
 interface CliOptions {
   all: boolean;
+  day: boolean;
   userEmail: string;
   path: string;
   exportPath: string;
@@ -24,6 +27,7 @@ function parseArgs(): CliOptions {
 
   // Load defaults from .env
   let all = getEnvOption('PROCESS_ALL') === 'true';
+  let day = false;
   let userEmail = getEnvOption('USER_EMAIL') || '';
   let path = getEnvOption('PROJECT_PATH') || '';
   let exportPath = getEnvOption('EXPORT_PATH') || '';
@@ -33,6 +37,9 @@ function parseArgs(): CliOptions {
   while (i < args.length) {
     if (args[i] === '--all') {
       all = true;
+      i++;
+    } else if (args[i] === '-d' || args[i] === '--day') {
+      day = true;
       i++;
     } else if (args[i] === '-e' || args[i] === '--email') {
       userEmail = args[i + 1] || '';
@@ -57,7 +64,7 @@ function parseArgs(): CliOptions {
   if (!userEmail || !path) {
     console.error('Usage:');
     console.error('-----> Option 1 (with options):');
-    console.error('       ./git-history -e <email> -p <path> [--all] [-x <export_path>]');
+    console.error('       ./git-history -e <email> -p <path> [--all] [-d] [-x <export_path>]');
     console.error('');
     console.error('-----> Option 2 (legacy syntax):');
     console.error('       ./git-history [--all] <user_email> <repository_path>');
@@ -70,6 +77,7 @@ function parseArgs(): CliOptions {
     console.error('  -e, --email      User email (overrides USER_EMAIL in .env)');
     console.error('  -p, --path       Repository path (overrides PROJECT_PATH in .env)');
     console.error('  -x, --export     Custom export path (overrides EXPORT_PATH in .env, default: ./export)');
+    console.error('  -d, --day        Generate overtime-by-day automatically after git-history');
     console.error('  --all            Process all repositories in folder (overrides PROCESS_ALL in .env)');
     console.error('');
     console.error('Environment variables (.env):');
@@ -93,10 +101,25 @@ function parseArgs(): CliOptions {
     exportPath = resolve(process.cwd(), 'export');
   }
 
-  return { all, userEmail, path, exportPath };
+  return { all, day, userEmail, path, exportPath };
 }
 
-function main() {
+async function promptOvertimeByDay(): Promise<boolean> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question('\n📊 Générer le fichier overtime-by-day ? (Y/n): ', (answer) => {
+      rl.close();
+      const normalized = answer.trim().toLowerCase();
+      resolve(normalized === 'y' || normalized === 'yes' || normalized === '');
+    });
+  });
+}
+
+async function main() {
   console.log('⚙️  Chargement de la configuration...');
   const config = loadConfig();
 
@@ -132,6 +155,20 @@ function main() {
 
   console.log('📄 Historique git généré ici :');
   console.log(`"${outputFile}"`);
+
+  // Generate overtime-by-day if requested or prompt user
+  let shouldGenerateDay = options.day;
+
+  if (!shouldGenerateDay) {
+    shouldGenerateDay = await promptOvertimeByDay();
+  }
+
+  if (shouldGenerateDay) {
+    console.log('\n⏰ Génération du fichier overtime-by-day...');
+    const overtimeOutputPath = await generateOvertimeByDay(outputFile, options.exportPath);
+    console.log('✅ Fichier overtime-by-day généré :');
+    console.log(`"${overtimeOutputPath}"`);
+  }
 }
 
 main();

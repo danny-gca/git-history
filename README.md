@@ -136,6 +136,10 @@ Then simply run:
 
 # With custom export folder
 ./git-history --all -e your@mail.org -p ~/your/folder/path -x ~/custom-export
+
+# Generate overtime-by-day automatically (no prompt)
+./git-history -d
+./git-history --all -e your@mail.org -p ~/your/folder/path -d
 ```
 
 #### Method 3: Override .env defaults
@@ -165,6 +169,7 @@ You can override any .env default with command line options:
 - `-e, --email` : User email address (overrides `USER_EMAIL` in .env)
 - `-p, --path` : Repository path (overrides `PROJECT_PATH` in .env)
 - `-x, --export` : Custom export folder (overrides `EXPORT_PATH` in .env, default: ./export)
+- `-d, --day` : Generate overtime-by-day automatically after git-history (no prompt)
 - `--all` : Process all repositories in folder (overrides `PROCESS_ALL` in .env)
 
 ### 📊 Aggregate overtime by day
