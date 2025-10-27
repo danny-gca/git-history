@@ -2,8 +2,9 @@
 import { readFileSync } from 'fs';
 import { format, parse, differenceInMinutes, getDay } from 'date-fns';
 import { loadConfig } from './config.js';
-import { DayOvertime, WorkingHours } from './types.js';
+import { DayOvertime } from './types.js';
 import { writeDayOvertimeToCSV } from './csv-writer.js';
+import { getWorkingHours, parseTime, isNightTime } from './helpers.js';
 
 interface DayOvertimeTracker {
   // For before_morning, after_morning, before_afternoon, afterwork
@@ -36,25 +37,6 @@ function parseArgs(): { csvPath: string; outputPath: string } {
   };
 }
 
-function parseTime(dateStr: string, timeStr: string): Date {
-  return parse(`${dateStr} ${timeStr}`, 'yyyy-MM-dd HH:mm', new Date());
-}
-
-function getWorkingHours(date: Date, dayOfWeek: number, config: any): WorkingHours | null {
-  if (date < config.dateBefore) {
-    return config.beforeDateWorkingHours;
-  }
-
-  if (config.currentHomeDays.includes(dayOfWeek)) {
-    return config.currentHomeHours;
-  }
-
-  if (config.currentOfficeDays.includes(dayOfWeek)) {
-    return config.currentOfficeHours;
-  }
-
-  return null;
-}
 
 function main() {
   console.log('⚙️  Chargement de la configuration...');

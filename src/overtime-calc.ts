@@ -1,63 +1,12 @@
-import { getDay, parse, differenceInMinutes, isBefore } from 'date-fns';
-import { Config, GitCommit, OvertimeInfo, CommitWithOvertime, WorkingHours } from './types.js';
-
-function parseTime(dateStr: string, timeStr: string): Date {
-  return parse(`${dateStr} ${timeStr}`, 'yyyy-MM-dd HH:mm', new Date());
-}
-
-function getWorkingHours(commit: GitCommit, config: Config): WorkingHours | null {
-  const dayOfWeek = getDay(commit.date); // 0=Sunday, 1=Monday, ..., 6=Saturday
-
-  // Check if it's before the date threshold
-  if (isBefore(commit.date, config.dateBefore)) {
-    return config.beforeDateWorkingHours;
-  }
-
-  // Check if it's a home day
-  if (config.currentHomeDays.includes(dayOfWeek)) {
-    return config.currentHomeHours;
-  }
-
-  // Check if it's an office day
-  if (config.currentOfficeDays.includes(dayOfWeek)) {
-    return config.currentOfficeHours;
-  }
-
-  // No working hours for this day (weekend)
-  return null;
-}
-
-function isTimeInRange(time: string, start: string, end: string): boolean {
-  return time >= start && time <= end;
-}
-
-function calculateNightOvertime(commitTime: string, commitDate: Date, nightStart: string, nightEnd: string): number {
-  const dateStr = commitDate.toISOString().split('T')[0];
-
-  // After night start (e.g., 22:00)
-  if (commitTime > nightStart) {
-    const commitDateTime = parseTime(dateStr, commitTime);
-    const nightStartTime = parseTime(dateStr, nightStart);
-    return differenceInMinutes(commitDateTime, nightStartTime);
-  }
-
-  // Before night end (e.g., 04:00) - spans midnight
-  if (commitTime < nightEnd) {
-    const commitDateTime = parseTime(dateStr, commitTime);
-    const nightStartTime = parseTime(dateStr, nightStart);
-    const beforeMidnight = parseTime(dateStr, '23:59');
-    const midnight = parseTime(dateStr, '00:00');
-
-    // Calculate from night start to midnight
-    const diffNight = differenceInMinutes(beforeMidnight, nightStartTime);
-    // Calculate from midnight to commit time
-    const diffCommit = differenceInMinutes(commitDateTime, midnight);
-
-    return diffNight + diffCommit;
-  }
-
-  return 0;
-}
+import { getDay } from 'date-fns';
+import { Config, GitCommit, OvertimeInfo, CommitWithOvertime } from './types.js';
+import {
+  getWorkingHours,
+  calculateNightOvertime,
+  calculateBeforeMorningOvertime,
+  calculateLunchBreakOvertime,
+  calculateAfterWorkOvertime,
+} from './helpers.js';
 
 export function calculateOvertime(commit: GitCommit, config: Config): OvertimeInfo {
   const dayOfWeek = getDay(commit.date);
@@ -83,7 +32,7 @@ export function calculateOvertime(commit: GitCommit, config: Config): OvertimeIn
     return { isOvertime, isSaturday, isSunday, overtimeInMin };
   }
 
-  const workingHours = getWorkingHours(commit, config);
+  const workingHours = getWorkingHours(commit.date, dayOfWeek, config);
 
   if (!workingHours) {
     // No working hours defined for this day, consider it overtime
@@ -92,6 +41,7 @@ export function calculateOvertime(commit: GitCommit, config: Config): OvertimeIn
   }
 
   const commitTime = commit.time;
+  const dateStr = commit.date.toISOString().split('T')[0];
   const { morningStart, morningEnd, afternoonStart, afternoonEnd } = workingHours;
 
   // Check if night time (22h-4h)
@@ -104,31 +54,17 @@ export function calculateOvertime(commit: GitCommit, config: Config): OvertimeIn
 
   // Before morning start
   if (commitTime < morningStart) {
-    const dateStr = commit.date.toISOString().split('T')[0];
-    const commitDateTime = parseTime(dateStr, commitTime);
-    const morningStartTime = parseTime(dateStr, morningStart);
-    overtimeInMin = differenceInMinutes(morningStartTime, commitDateTime);
+    overtimeInMin = calculateBeforeMorningOvertime(commitTime, dateStr, morningStart);
     isOvertime = true;
   }
   // During lunch break
   else if (commitTime > morningEnd && commitTime < afternoonStart) {
-    const dateStr = commit.date.toISOString().split('T')[0];
-    const commitDateTime = parseTime(dateStr, commitTime);
-    const morningEndTime = parseTime(dateStr, morningEnd);
-    const afternoonStartTime = parseTime(dateStr, afternoonStart);
-
-    const diffMorning = differenceInMinutes(commitDateTime, morningEndTime);
-    const diffAfternoon = differenceInMinutes(afternoonStartTime, commitDateTime);
-
-    overtimeInMin = Math.min(diffMorning, diffAfternoon);
+    overtimeInMin = calculateLunchBreakOvertime(commitTime, dateStr, morningEnd, afternoonStart);
     isOvertime = true;
   }
   // After work
   else if (commitTime > afternoonEnd) {
-    const dateStr = commit.date.toISOString().split('T')[0];
-    const commitDateTime = parseTime(dateStr, commitTime);
-    const afternoonEndTime = parseTime(dateStr, afternoonEnd);
-    overtimeInMin = differenceInMinutes(commitDateTime, afternoonEndTime);
+    overtimeInMin = calculateAfterWorkOvertime(commitTime, dateStr, afternoonEnd);
     isOvertime = true;
   }
 

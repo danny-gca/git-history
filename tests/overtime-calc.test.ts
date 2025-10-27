@@ -205,5 +205,126 @@ describe('calculateOvertime', () => {
       // From 22:00 to midnight = 119 minutes
       expect(result.overtimeInMin).toBe(119);
     });
+
+    it('should handle 00:32 (night time)', () => {
+      const commit = createCommit('2025-05-05', '00:32'); // Monday night
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // From 22:00 to midnight (119 min) + midnight to 00:32 (32 min) = 151 min
+      expect(result.overtimeInMin).toBe(151);
+    });
+
+    it('should handle 04:00 (exact night end)', () => {
+      const commit = createCommit('2025-05-05', '04:00'); // Exact night end
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // 04:00 < 04:00 is false, so it's treated as "before morning"
+      // 04:00 to 08:30 (morning start) = 270 minutes
+      expect(result.overtimeInMin).toBe(270);
+    });
+
+    it('should handle 04:01 (just after night end - before morning)', () => {
+      const commit = createCommit('2025-05-05', '04:01'); // Monday
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // 04:01 to 08:30 (morning start) = 269 minutes
+      expect(result.overtimeInMin).toBe(269);
+    });
+
+    it('should handle 12:00 (exact morning end)', () => {
+      const commit = createCommit('2025-05-08', '12:00'); // Thursday at home (morning end)
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(false);
+      expect(result.overtimeInMin).toBe(0);
+    });
+
+    it('should handle 12:01 (just after morning end)', () => {
+      const commit = createCommit('2025-05-08', '12:01'); // Thursday at home
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // 12:01 is closer to 12:00 (1 min) than 14:00 (119 min)
+      expect(result.overtimeInMin).toBe(1);
+    });
+
+    it('should handle 13:59 (just before afternoon start)', () => {
+      const commit = createCommit('2025-05-08', '13:59'); // Thursday at home
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // 13:59 to 14:00 = 1 minute
+      expect(result.overtimeInMin).toBe(1);
+    });
+
+    it('should handle 14:00 (exact afternoon start)', () => {
+      const commit = createCommit('2025-05-08', '14:00'); // Thursday at home
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(false);
+      expect(result.overtimeInMin).toBe(0);
+    });
+
+    it('should handle 17:30 (exact afternoon end at home)', () => {
+      const commit = createCommit('2025-05-08', '17:30'); // Thursday at home (exact end)
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(false);
+      expect(result.overtimeInMin).toBe(0);
+    });
+
+    it('should handle 17:31 (just after afternoon end at home)', () => {
+      const commit = createCommit('2025-05-08', '17:31'); // Thursday at home
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      expect(result.overtimeInMin).toBe(1); // 17:30 to 17:31 = 1 minute
+    });
+
+    it('should handle 22:00 (exact night start)', () => {
+      const commit = createCommit('2025-05-05', '22:00'); // Exact night start
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // "22:00" > "22:00" is false, so it's treated as "after work"
+      // 16:30 (office end) to 22:00 = 330 minutes
+      expect(result.overtimeInMin).toBe(330);
+    });
+
+    it('should handle 22:01 (just after night start)', () => {
+      const commit = createCommit('2025-05-05', '22:01'); // Just after night start
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      expect(result.overtimeInMin).toBe(1); // 22:00 to 22:01 = 1 minute
+    });
+
+    it('should handle 03:59 (just before night end)', () => {
+      const commit = createCommit('2025-05-05', '03:59'); // Just before night end
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(true);
+      // From 22:00 to midnight (119 min) + midnight to 03:59 (239 min) = 358 min
+      expect(result.overtimeInMin).toBe(358);
+    });
+
+    it('should handle 12:30 (exact morning end at office)', () => {
+      const commit = createCommit('2025-05-05', '12:30'); // Monday at office (exact end)
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(false);
+      expect(result.overtimeInMin).toBe(0);
+    });
+
+    it('should handle 13:30 (exact afternoon start at office)', () => {
+      const commit = createCommit('2025-05-05', '13:30'); // Monday at office (exact start)
+      const result = calculateOvertime(commit, mockConfig);
+
+      expect(result.isOvertime).toBe(false);
+      expect(result.overtimeInMin).toBe(0);
+    });
   });
 });
